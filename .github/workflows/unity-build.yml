@@ -1,4 +1,4 @@
-name: Unity Build
+name: unity-build
 
 on:
   push:
@@ -10,33 +10,93 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # 1. Kaynak kodu çek
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Cache Library Folder
-        uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            Library-${{ runner.os }}-
+      # 2. Disk alanını temizle (Opsiyonel: CI ortamında yeterli alan olmayabilir)
+      - name: Clean Disk Space
+        run: |
+          echo "🧹 Cleaning up disk space..."
+          docker system prune -a -f || true
+          docker volume prune -f || true
+          docker builder prune -a -f || true
+          sudo rm -rf /opt/unity || true
+          sudo rm -rf ~/.cache/unity3d || true
+          df -h
 
-      - name: Setup Unity License
+      # 3. Android SDK'nın kurulması ve doğru dizin yapısının oluşturulması
+      - name: Install Android SDK
+        run: |
+          echo "📥 Installing Android SDK..."
+          export ANDROID_HOME=$HOME/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
+          # SDK araçlarını indir
+          curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
+          unzip sdk-tools.zip -d latest
+          rm sdk-tools.zip
+          # Açılan yapıda "latest/cmdline-tools" klasörü varsa içeriğini "latest" dizinine taşıyoruz
+          if [ -d "latest/cmdline-tools" ]; then
+            mv latest/cmdline-tools/* latest/
+            rm -rf latest/cmdline-tools
+          fi
+          # Ortam değişkenlerini kaydediyoruz
+          echo "export ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "export ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
+          # PATH'in güncellendiğini doğrulayalım
+          echo "Listing SDK tools directory:"
+          ls -la $ANDROID_HOME/cmdline-tools/latest/bin
+          echo "✅ Android SDK installed!"
+
+      # 4. Android Build Tools ve SDK bileşenlerini kur ve lisansları kabul et
+      - name: Install Android Build Tools
+        run: |
+          source $GITHUB_ENV
+          echo "✅ Updating SDK tools..."
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --update || echo "❌ Update failed"
+          echo "✅ Accepting SDK licenses..."
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || echo "❌ License acceptance failed"
+          echo "✅ Installing Build Tools..."
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools" || echo "❌ Installation failed"
+
+      # 5. Unity ile Android APK build işlemini başlat
+      - name: Build Android APK with Unity
+        uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-        run: |
-          echo "$UNITY_LICENSE" > unity.ulf
-          mkdir -p ~/.unity3d
-          mv unity.ulf ~/.unity3d/Unity_lic.ulf
-
-      - name: Setup Unity
-        uses: game-ci/unity-builder@v4
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          unityVersion: "2022.3.45f1"
-          targetPlatform: "StandaloneWindows64"
+          targetPlatform: Android
+          androidExportType: androidPackage
+          androidSymbolType: none
+          projectPath: .  # Proje dizinini gerektiği gibi ayarlayın
+        continue-on-error: false
 
-      - name: Upload Build Artifact
+      # 6. Build dizin yapısını ve içeriğini listele (debug)
+      - name: Debug Build Directory Structure
+        run: |
+          echo "🔍 Listing build directory structure..."
+          ls -R build/ || echo "build/ dizini bulunamadı"
+
+      # 7. APK dosyasının varlığını kontrol et
+      - name: Check APK Existence
+        run: |
+          echo "🔍 Searching for APK files..."
+          find . -name "*.apk" -print
+          if ls build/Android/*.apk 1> /dev/null 2>&1; then
+            echo "✅ APK file found in build/Android."
+          else
+            echo "❌ No APK file found in build/Android."
+            exit 1
+          fi
+
+      # 8. APK dosyasını artifacts olarak yükle
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Build
-          path: build/StandaloneWindows64
+          name: Build-Android
+          path: build/Android/*.apk
