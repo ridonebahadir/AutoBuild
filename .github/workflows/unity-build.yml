@@ -21,10 +21,15 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-
 
-      - name: Setup Unity
-        uses: game-ci/unity-builder@v4  # Lisans aktivasyonu olmadan devam et
+      - name: Activate Unity License
+        uses: game-ci/unity-activate@v3
         with:
-          unityVersion: "2022.3.10f1"
+          unityLicense: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Setup Unity
+        uses: game-ci/unity-builder@v4
+        with:
+          unityVersion: "2022.3.45f1"
           targetPlatform: "StandaloneWindows64"
 
       - name: Upload Build Artifact
