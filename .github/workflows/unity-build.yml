@@ -30,15 +30,10 @@ jobs:
           mv unity.ulf ~/.unity3d/Unity_lic.ulf
 
       - name: Setup Unity
-        uses: game-ci/unity-setup@v2
+        uses: game-ci/unity-builder@v4
         with:
-          unity-version: "2022.3.45f1"
-
-      - name: Build Unity Project
-        uses: game-ci/unity-builder@v2
-        with:
+          unityVersion: "2022.3.45f1"
           targetPlatform: "StandaloneWindows64"
-          buildMethod: "Namespace.ClassName.BuildMethod"
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
