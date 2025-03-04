@@ -73,7 +73,7 @@ jobs:
           targetPlatform: Android
           androidExportType: androidPackage
           androidSymbolType: none
-          projectPath: .  # Proje dizinini gerektiği gibi ayarlayın
+          projectPath: C:/Users/paper/Documents/AutoBuild/AutoBuild  # Proje dizinini gerektiği gibi ayarlayın
         continue-on-error: false
 
       # 6. Build dizin yapısını ve içeriğini listele (debug)
