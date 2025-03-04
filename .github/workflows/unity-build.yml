@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Windows gerekiyorsa "windows-latest" seçebilirsin.
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -24,12 +24,27 @@ jobs:
       - name: Setup Unity
         uses: game-ci/unity-builder@v3
         with:
-          unityVersion: 2022.3.10f1  # Kendi Unity versiyonunu gir
+          unityVersion: 2022.3.45f1  # Kendi Unity versiyonunu gir
           targetPlatform: StandaloneWindows64  # Windows build için
           # targetPlatform: Android  -> Eğer Android için build almak istiyorsan bunu kullan.
+
+
+
+    
+            - name: Activate Unity License
+        uses: game-ci/unity-activate@v3
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+    
+
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: Build
           path: build/StandaloneWindows64  # Eğer Android içinse: path: build/Android
+
+
+      
+          
