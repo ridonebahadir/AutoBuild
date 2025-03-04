@@ -3,32 +3,37 @@ name: Unity Build
 on:
   push:
     branches:
-      - main  # Kendi branch'ini gir
+      - main  # Kendi branch'ine göre değiştir
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Windows gerekiyorsa "windows-latest"
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Cache Library Folder
-        uses: actions/cache@v3
+        uses: actions/cache@v4  # v4 sürümüne güncellendi
         with:
           path: Library
           key: Library-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             Library-${{ runner.os }}-
 
-      - name: Setup Unity
-        uses: game-ci/unity-builder@v4  # v4 kullan
+      - name: Activate Unity License
+        uses: game-ci/unity-activate@v4
         with:
-          unityVersion: "2022.3.10f1"  # Çift tırnak kullan
-          targetPlatform: "StandaloneWindows64"  # Eğer Android içinse: "Android"
+          unityLicense: ${{ secrets.UNITY_LICENSE }}  # ULF dosyası kullan
+
+      - name: Setup Unity
+        uses: game-ci/unity-builder@v4
+        with:
+          unityVersion: "2022.3.45f1"  # Kendi Unity versiyonunu gir
+          targetPlatform: "StandaloneWindows64"
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # v3 yerine v4 kullanıldı
         with:
           name: Build
-          path: build/StandaloneWindows64  # Eğer Android içinse: build/Android
+          path: build/StandaloneWindows64
