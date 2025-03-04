@@ -3,11 +3,11 @@ name: Unity Build
 on:
   push:
     branches:
-      - main  # Burayı kendi ana branch'ine göre düzenle
+      - main  # Kendi branch'ini gir
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Windows gerekiyorsa "windows-latest"
 
     steps:
       - name: Checkout repository
@@ -22,29 +22,13 @@ jobs:
             Library-${{ runner.os }}-
 
       - name: Setup Unity
-        uses: game-ci/unity-builder@v3
+        uses: game-ci/unity-builder@v4  # v4 kullan
         with:
-          unityVersion: 2022.3.10f1  # Kendi Unity versiyonunu gir
-          targetPlatform: StandaloneWindows64  # Windows build için
-          # targetPlatform: Android  -> Eğer Android için build almak istiyorsan bunu kullan.
-
-
-
-    
-            - name: Activate Unity License
-        uses: game-ci/unity-activate@v3
-        env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-    
-
+          unityVersion: "2022.3.10f1"  # Çift tırnak kullan
+          targetPlatform: "StandaloneWindows64"  # Eğer Android içinse: "Android"
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: Build
-          path: build/StandaloneWindows64  # Eğer Android içinse: path: build/Android
-
-
-      
-          
+          path: build/StandaloneWindows64  # Eğer Android içinse: build/Android
