@@ -24,7 +24,7 @@ jobs:
       - name: Setup Unity
         uses: game-ci/unity-builder@v3
         with:
-          unityVersion: 2022.3.45f1  # Kendi Unity versiyonunu gir
+          unityVersion: 2022.3.10f1  # Kendi Unity versiyonunu gir
           targetPlatform: StandaloneWindows64  # Windows build için
           # targetPlatform: Android  -> Eğer Android için build almak istiyorsan bunu kullan.
 
