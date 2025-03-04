@@ -1,0 +1,35 @@
+name: Unity Build
+
+on:
+  push:
+    branches:
+      - main  # Burayı kendi ana branch'ine göre düzenle
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Windows gerekiyorsa "windows-latest" seçebilirsin.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Library Folder
+        uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            Library-${{ runner.os }}-
+
+      - name: Setup Unity
+        uses: game-ci/unity-builder@v3
+        with:
+          unityVersion: 2022.3.10f1  # Kendi Unity versiyonunu gir
+          targetPlatform: StandaloneWindows64  # Windows build için
+          # targetPlatform: Android  -> Eğer Android için build almak istiyorsan bunu kullan.
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Build
+          path: build/StandaloneWindows64  # Eğer Android içinse: path: build/Android
