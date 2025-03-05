@@ -91,18 +91,19 @@ jobs:
       - name: Send Slack Notification
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          channel-id: "#genel"  # Slack kanal ismini buraya gir
-          payload: |
-            {
-              "text": "🚀 *Unity Build Tamamlandı!* ✅",
-              "attachments": [
-                {
-                  "color": "#36a64f",
-                  "title": "Artifact Link",
-                  "title_link": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  "text": "🎯 APK dosyanı buradan indir!"
-                }
-              ]
-            }
+            channel-id: "#genel"
+            payload: |
+              {
+                "text": "🚀 *Unity Build Tamamlandı!* ✅",
+                "attachments": [
+                  {
+                    "color": "#36a64f",
+                    "title": "🎯 APK Dosyan Burada!",
+                    "title_link": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts",
+                    "text": "🔗 *APK dosyanı indirmek için tıkla!*"
+                  }
+                ]
+              }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        
