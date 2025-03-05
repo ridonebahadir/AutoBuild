@@ -93,29 +93,35 @@ jobs:
           echo "📤 Uploading APK to Slack..."
           
           FILE_PATH=$(find build/Android/ -type f -name "*.apk" | head -n 1)
-
+          
           if [ -z "$FILE_PATH" ]; then
             echo "❌ APK dosyası bulunamadı!"
             exit 1
           fi
-
+          
+          FILE_NAME=$(basename "$FILE_PATH")
+          FILE_SIZE=$(stat -c%s "$FILE_PATH")  # Dosya boyutunu al
+          
           # Slack'ten upload URL ve file ID al
           UPLOAD_RESPONSE=$(curl -s -X POST "https://slack.com/api/files.getUploadURLExternal" \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"filename": "'"$(basename $FILE_PATH)"'"}')
-
+            --data '{
+              "filename": "'"$FILE_NAME"'",
+              "length": '"$FILE_SIZE"'
+            }')
+          
           UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
           FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
-
+          
           if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" == "null" ]; then
             echo "❌ Slack yükleme URL'si alınamadı! Hata: $UPLOAD_RESPONSE"
             exit 1
           fi
-
+          
           echo "🔄 Dosya yükleniyor..."
           curl -X POST -F file=@"$FILE_PATH" "$UPLOAD_URL"
-
+          
           echo "✅ Yükleme tamamlandı, Slack'e bildiriliyor..."
           curl -X POST "https://slack.com/api/files.completeUploadExternal" \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
@@ -127,3 +133,4 @@ jobs:
             }'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+     
