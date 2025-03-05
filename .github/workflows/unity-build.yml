@@ -104,7 +104,7 @@ jobs:
           if [ -f "$APK_FILE" ]; then
             echo "✅ APK file found: $APK_FILE"
             RESPONSE=$(curl -F file=@"$APK_FILE" \
-                             -F channels="#your-channel-name" \
+                             -F channels="#auto_build" \
                              -F token="${{ secrets.SLACK_TOKEN }}" \
                              -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" \
                              https://slack.com/api/files.uploadV2)
