@@ -90,18 +90,19 @@ jobs:
 
       - name: Send Slack Notification with APK
         run: |
-            echo "📤 Uploading APK to Slack..."
-            FILE_PATH=$(ls build/Android/*.apk | head -n 1)
-            if [ -z "$FILE_PATH" ]; then
-                echo "❌ APK dosyası bulunamadı!"
-                exit 1
-            fi
-            curl -F file=@"$FILE_PATH" \
-                 -F "initial_comment=🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" \
-                 -F channels="#auto_build" \
-                 -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-                 https://slack.com/api/files.upload
+          echo "📤 Uploading APK to Slack..."
+          FILE_PATH=$(ls build/Android/*.apk | head -n 1)
+          if [ -z "$FILE_PATH" ]; then
+            echo "❌ APK dosyası bulunamadı!"
+            exit 1
+          fi
+          curl -F file=@"$FILE_PATH" \
+          -F "initial_comment=🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" \
+          -F channels="#auto_build" \
+          -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+          https://slack.com/api/files.upload_v2
         env:
-            SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   
   
