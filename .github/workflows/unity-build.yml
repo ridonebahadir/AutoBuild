@@ -91,46 +91,48 @@ jobs:
       - name: Send Slack Notification with APK
         run: |
           echo "📤 Uploading APK to Slack..."
-          
+
+          # APK dosyasını bul
           FILE_PATH=$(find build/Android/ -type f -name "*.apk" | head -n 1)
-          
+
           if [ -z "$FILE_PATH" ]; then
             echo "❌ APK dosyası bulunamadı!"
             exit 1
           fi
-          
+
           FILE_NAME=$(basename "$FILE_PATH")
           FILE_SIZE=$(stat -c%s "$FILE_PATH")  # Dosya boyutunu al
-          
+
+          echo "🔍 Dosya Adı: $FILE_NAME"
+          echo "📦 Dosya Boyutu: $FILE_SIZE bytes"
+
           # Slack'ten upload URL ve file ID al
           UPLOAD_RESPONSE=$(curl -s -X POST "https://slack.com/api/files.getUploadURLExternal" \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data '{
-              "filename": "'"$FILE_NAME"'",
-              "length": '"$FILE_SIZE"'
-            }')
-          
-          UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
-          FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
-          
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data "{\"filename\":\"$FILE_NAME\",\"length\":$FILE_SIZE}")
+
+          echo "🛠 API Yanıtı: $UPLOAD_RESPONSE"
+
+          # JSON'dan değerleri çek
+          UPLOAD_URL=$(echo "$UPLOAD_RESPONSE" | jq -r '.upload_url')
+          FILE_ID=$(echo "$UPLOAD_RESPONSE" | jq -r '.file_id')
+
+          # Hata kontrolü
           if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" == "null" ]; then
             echo "❌ Slack yükleme URL'si alınamadı! Hata: $UPLOAD_RESPONSE"
             exit 1
           fi
-          
+
           echo "🔄 Dosya yükleniyor..."
           curl -X POST -F file=@"$FILE_PATH" "$UPLOAD_URL"
-          
+
           echo "✅ Yükleme tamamlandı, Slack'e bildiriliyor..."
           curl -X POST "https://slack.com/api/files.completeUploadExternal" \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data '{
-              "file_id": "'"$FILE_ID"'",
-              "channel_id": "#auto_build",
-              "initial_comment": "🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱"
-            }'
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data "{\"file_id\":\"$FILE_ID\",\"channel_id\":\"#auto_build\",\"initial_comment\":\"🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱\"}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      
      
