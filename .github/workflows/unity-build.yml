@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Disk alanını temizle (Opsiyonel: CI ortamında yeterli alan olmayabilir
+      # 2. Disk alanını temizle (Opsiyonel: CI ortamında yeterli alan olmayabilir)
       - name: Clean Disk Space
         run: |
           echo "🧹 Cleaning up disk space..."
@@ -100,3 +100,15 @@ jobs:
         with:
           name: Build-Android
           path: build/Android/*.apk
+          retention-days: 1  # Artifact'in saklanma süresi (isteğe bağlı)
+
+      # 9. Artifact'in başarıyla yüklendiğini kontrol et
+      - name: Verify Artifact Upload
+        run: |
+          echo "🔍 Verifying artifact upload..."
+          if [ -f build/Android/*.apk ]; then
+            echo "✅ Artifact successfully uploaded."
+          else
+            echo "❌ Artifact upload failed."
+            exit 1
+          fi
