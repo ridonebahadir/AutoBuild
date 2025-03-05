@@ -10,11 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Kaynak kodu çek
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Disk alanını temizle (Opsiyonel: CI ortamında yeterli alan olmayabilir)
       - name: Clean Disk Space
         run: |
           echo "🧹 Cleaning up disk space..."
@@ -25,7 +23,6 @@ jobs:
           sudo rm -rf ~/.cache/unity3d || true
           df -h
 
-      # 3. Android SDK'nın kurulması ve doğru dizin yapısının oluşturulması
       - name: Install Android SDK
         run: |
           echo "📥 Installing Android SDK..."
@@ -33,25 +30,18 @@ jobs:
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           mkdir -p $ANDROID_HOME/cmdline-tools
           cd $ANDROID_HOME/cmdline-tools
-          # SDK araçlarını indir
           curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
           unzip sdk-tools.zip -d latest
           rm sdk-tools.zip
-          # Açılan yapıda "latest/cmdline-tools" klasörü varsa içeriğini "latest" dizinine taşıyoruz
           if [ -d "latest/cmdline-tools" ]; then
             mv latest/cmdline-tools/* latest/
             rm -rf latest/cmdline-tools
           fi
-          # Ortam değişkenlerini kaydediyoruz
           echo "export ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "export ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
           echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
-          # PATH'in güncellendiğini doğrulayalım
-          echo "Listing SDK tools directory:"
-          ls -la $ANDROID_HOME/cmdline-tools/latest/bin
           echo "✅ Android SDK installed!"
 
-      # 4. Android Build Tools ve SDK bileşenlerini kur ve lisansları kabul et
       - name: Install Android Build Tools
         run: |
           source $GITHUB_ENV
@@ -62,7 +52,6 @@ jobs:
           echo "✅ Installing Build Tools..."
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools" || echo "❌ Installation failed"
 
-      # 5. Unity ile Android APK build işlemini başlat
       - name: Build Android APK with Unity
         uses: game-ci/unity-builder@v4
         env:
@@ -73,16 +62,14 @@ jobs:
           targetPlatform: Android
           androidExportType: androidPackage
           androidSymbolType: none
-          projectPath: .  # Proje dizinini gerektiği gibi ayarlayın
+          projectPath: .
         continue-on-error: false
 
-      # 6. Build dizin yapısını ve içeriğini listele (debug)
       - name: Debug Build Directory Structure
         run: |
           echo "🔍 Listing build directory structure..."
           ls -R build/ || echo "build/ dizini bulunamadı"
 
-      # 7. APK dosyasının varlığını kontrol et
       - name: Check APK Existence
         run: |
           echo "🔍 Searching for APK files..."
@@ -94,21 +81,28 @@ jobs:
             exit 1
           fi
 
-      # 8. APK dosyasını artifacts olarak yükle
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Build-Android
           path: build/Android/*.apk
-          retention-days: 1  # Artifact'in saklanma süresi (isteğe bağlı)
+          retention-days: 5
 
-      # 9. Artifact'in başarıyla yüklendiğini kontrol et
-      - name: Verify Artifact Upload
-        run: |
-          echo "🔍 Verifying artifact upload..."
-          if [ -f build/Android/*.apk ]; then
-            echo "✅ Artifact successfully uploaded."
-          else
-            echo "❌ Artifact upload failed."
-            exit 1
-          fi
+      - name: Send Slack Notification
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: "#genel"  # Slack kanal ismini buraya gir
+          payload: |
+            {
+              "text": "🚀 *Unity Build Tamamlandı!* ✅",
+              "attachments": [
+                {
+                  "color": "#36a64f",
+                  "title": "Artifact Link",
+                  "title_link": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "text": "🎯 APK dosyanı buradan indir!"
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
