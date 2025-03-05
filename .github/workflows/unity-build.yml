@@ -98,7 +98,7 @@ jobs:
             fi
             curl -F file=@"$FILE_PATH" \
                  -F "initial_comment=🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" \
-                 -F channels="#genel" \
+                 -F channels="#auto_build" \
                  -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
                  https://slack.com/api/files.upload
         env:
