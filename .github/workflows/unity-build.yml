@@ -101,7 +101,7 @@ jobs:
                  -F "file=@$FILE_PATH" \
                  -F "initial_comment=🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" \
                  -F "channels=#auto_build"
-          env:
+        env:
             SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         
   
