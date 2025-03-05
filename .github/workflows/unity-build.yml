@@ -10,11 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Kodu GitHub'dan çek
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Disk alanını temizle
       - name: Clean Disk Space
         run: |
           echo "🧹 Cleaning up disk space..."
@@ -25,7 +23,6 @@ jobs:
           sudo rm -rf ~/.cache/unity3d || true
           df -h
 
-      # 3. Android SDK'yı kur
       - name: Install Android SDK
         run: |
           echo "📥 Installing Android SDK..."
@@ -45,7 +42,6 @@ jobs:
           echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
           echo "✅ Android SDK installed!"
 
-      # 4. Android Build Tools'u kur
       - name: Install Android Build Tools
         run: |
           source $GITHUB_ENV
@@ -56,7 +52,6 @@ jobs:
           echo "✅ Installing Build Tools..."
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools" || echo "❌ Installation failed"
 
-      # 5. Unity ile Android APK oluştur
       - name: Build Android APK with Unity
         uses: game-ci/unity-builder@v4
         env:
@@ -70,13 +65,11 @@ jobs:
           projectPath: .
         continue-on-error: false
 
-      # 6. Build dizin yapısını kontrol et
       - name: Debug Build Directory Structure
         run: |
           echo "🔍 Listing build directory structure..."
           ls -R build/ || echo "build/ dizini bulunamadı"
 
-      # 7. APK dosyasının varlığını kontrol et
       - name: Check APK Existence
         run: |
           echo "🔍 Searching for APK files..."
@@ -88,7 +81,6 @@ jobs:
             exit 1
           fi
 
-      # 8. APK dosyasını GitHub Artifact olarak yükle
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -96,8 +88,7 @@ jobs:
           path: build/Android/*.apk
           retention-days: 5
 
-      # 9. APK dosyasını Slack'e yükle (files.uploadV2 kullanarak)
-      - name: Upload APK to Slack using files.uploadV2
+      - name: Upload APK to Slack using files.upload
         run: |
           echo "📤 Uploading APK to Slack..."
           APK_FILE=$(find build/Android -name "*.apk" | head -n 1)
@@ -106,8 +97,7 @@ jobs:
             RESPONSE=$(curl -F file=@"$APK_FILE" \
                              -F channels="#auto_build" \
                              -F token="${{ secrets.SLACK_TOKEN }}" \
-                             -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" \
-                             https://slack.com/api/files.uploadV2)
+                             https://slack.com/api/files.upload)
             echo "Slack API Response: $RESPONSE"
             if echo "$RESPONSE" | grep -q '"ok":true'; then
               echo "✅ APK uploaded to Slack!"
@@ -120,23 +110,22 @@ jobs:
             exit 1
           fi
 
-      # 10. Slack'e bildirim gönder (Opsiyonel)
-      - name: Send Slack Notification
+      - name: Send Slack Notification with Artifact Link
         run: |
           echo "📨 Sending Slack notification..."
           curl -X POST -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" \
                -H "Content-type: application/json" \
                --data '{
                  "channel": "#auto_build",
-                 "text": "✅ APK build completed and uploaded successfully!",
+                 "text": "✅ APK build completed! Download the APK from the link below:",
                  "attachments": [
                    {
-                     "text": "Download the APK from the link below:",
+                     "text": "Artifact Link",
                      "actions": [
                        {
                          "type": "button",
                          "text": "Download APK",
-                         "url": "https://slack.com/files/your-file-id"
+                         "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                        }
                      ]
                    }
