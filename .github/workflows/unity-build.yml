@@ -48,7 +48,7 @@ jobs:
           echo "✅ Updating SDK tools..."
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --update || echo "❌ Update failed"
           echo "✅ Accepting SDK licenses..."
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || echo "❌ License acceptance failed"
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || echo "❌ License acceptance failed "
           echo "✅ Installing Build Tools..."
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools" || echo "❌ Installation failed"
 
