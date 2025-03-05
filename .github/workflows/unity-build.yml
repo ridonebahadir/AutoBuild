@@ -114,7 +114,7 @@ jobs:
             # 2. Upload the file in chunks
             CHUNK_SIZE=5M
             FILE_SIZE=$(stat -c %s "$APK_FILE")
-            CHUNKS=$((FILE_SIZE / (CHUNK_SIZE)) + 1))
+           CHUNKS=$((FILE_SIZE / CHUNK_SIZE + 1))  # Düzeltilmiş satır
             echo "📦 Uploading file in $CHUNKS chunks..."
 
             for ((i=0; i<$CHUNKS; i++)); do
