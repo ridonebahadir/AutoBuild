@@ -90,7 +90,7 @@ jobs:
 
       - name: Send Slack Notification with APK
         run: |
-          echo "📤 Uploading APK to Slack..."
+          echo "📤 APK dosyası Slack'e yükleniyor..."
 
           # APK dosyasını bul
           FILE_PATH=$(find build/Android/ -type f -name "*.apk" | head -n 1)
@@ -118,10 +118,13 @@ jobs:
           echo "📦 Dosya Boyutu: $FILE_SIZE bytes"
 
           # Slack'ten upload URL ve file ID al
+          JSON_PAYLOAD=$(jq -n --arg filename "$FILE_NAME" --argjson length "$FILE_SIZE" '{filename: $filename, length: $length}')
+          echo "🛠 Gönderilen JSON Payload: $JSON_PAYLOAD"
+
           UPLOAD_RESPONSE=$(curl -s -X POST "https://slack.com/api/files.getUploadURLExternal" \
             -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
             -H "Content-Type: application/json; charset=utf-8" \
-            --data "$(jq -n --arg filename "$FILE_NAME" --argjson length "$FILE_SIZE" '{filename: $filename, length: $length}')")
+            --data "$JSON_PAYLOAD")
 
           echo "🛠 API Yanıtı: $UPLOAD_RESPONSE"
 
@@ -145,4 +148,6 @@ jobs:
             --data "$(jq -n --arg file_id "$FILE_ID" --arg channel_id "#auto_build" --arg initial_comment "🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" '{file_id: $file_id, channel_id: $channel_id, initial_comment: $initial_comment}')"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          
+     
+      
+     
