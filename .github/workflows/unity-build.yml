@@ -97,10 +97,10 @@ jobs:
             exit 1
           fi
           curl -F file=@"$FILE_PATH" \
-          -F "initial_comment=🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" \
-          -F channels="#auto_build" \
-          -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-          https://slack.com/api/files.upload_v2
+               -F "initial_comment=🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" \
+               -F channels="#auto_build" \
+               -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
+               https://slack.com/api/files.upload_v2 | tee response.json
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
