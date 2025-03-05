@@ -101,7 +101,18 @@ jobs:
           fi
 
           FILE_NAME=$(basename "$FILE_PATH")
-          FILE_SIZE=$(wc -c < "$FILE_PATH" | tr -d ' ')  # Alternatif dosya boyutu hesaplama
+
+          # Dosya boyutunu al (stat komutunu kullanarak)
+          if command -v stat &> /dev/null; then
+            FILE_SIZE=$(stat -c%s "$FILE_PATH")
+          else
+            FILE_SIZE=$(wc -c < "$FILE_PATH" | tr -d ' ')
+          fi
+
+          if [ -z "$FILE_SIZE" ] || [ "$FILE_SIZE" -le 0 ]; then
+            echo "❌ Geçerli dosya boyutu alınamadı!"
+            exit 1
+          fi
 
           echo "🔍 Dosya Adı: $FILE_NAME"
           echo "📦 Dosya Boyutu: $FILE_SIZE bytes"
@@ -134,7 +145,4 @@ jobs:
             --data "$(jq -n --arg file_id "$FILE_ID" --arg channel_id "#auto_build" --arg initial_comment "🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" '{file_id: $file_id, channel_id: $channel_id, initial_comment: $initial_comment}')"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      
-     
-      
-     
+          
