@@ -88,22 +88,27 @@ jobs:
           path: build/Android/*.apk
           retention-days: 5
 
+          - name: Get Artifact URL
+          id: artifact_info
+          run: echo "artifact_url=https://github.com/${{ github.repository }}/suites/${{ github.run_id }}/artifacts/${{ github.run_id }}" >> $GITHUB_ENV
+  
       - name: Send Slack Notification
         uses: slackapi/slack-github-action@v1.24.0
         with:
-            channel-id: "#genel"
-            payload: |
-              {
-                "text": "🚀 *Unity Build Tamamlandı!* ✅",
-                "attachments": [
-                  {
-                    "color": "#36a64f",
-                    "title": "🎯 APK Dosyan Burada!",
-                    "title_link": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts",
-                    "text": "🔗 *APK dosyanı indirmek için tıkla!*"
-                  }
-                ]
-              }
-        env:
-            SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+              channel-id: "#genel"
+              payload: |
+                {
+                  "text": "🚀 *Unity Build Tamamlandı!* ✅",
+                  "attachments": [
+                    {
+                      "color": "#36a64f",
+                      "title": "🎯 APK Dosyan Burada!",
+                      "title_link": "${{ env.artifact_url }}",
+                      "text": "🔗 *APK dosyanı indirmek için tıkla!*"
+                    }
+                  ]
+                }
+              env:
+              SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  
         
