@@ -89,7 +89,7 @@ jobs:
           retention-days: 5
 
           - name: Send Slack Notification with APK
-          run: |
+        run: |
               echo "📤 Uploading APK to Slack..."
               FILE_PATH=$(ls build/Android/*.apk | head -n 1)
               if [ -z "$FILE_PATH" ]; then
@@ -101,7 +101,7 @@ jobs:
                    -F channels="#auto_build" \
                    -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
                    https://slack.com/api/files.uploadV2
-          env:
+        env:
               SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   
   
