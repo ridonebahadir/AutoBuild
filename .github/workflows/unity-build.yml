@@ -88,21 +88,58 @@ jobs:
           path: build/Android/*.apk
           retention-days: 5
 
-      - name: Upload APK to Slack using files.upload
+      - name: Upload APK to Slack using files.getUploadURLExternal and files.completeUploadExternal
         run: |
           echo "📤 Uploading APK to Slack..."
           APK_FILE=$(find build/Android -name "*.apk" | head -n 1)
           if [ -f "$APK_FILE" ]; then
             echo "✅ APK file found: $APK_FILE"
-            RESPONSE=$(curl -F file=@"$APK_FILE" \
-                             -F channels="#auto_build" \
-                             -F token="${{ secrets.SLACK_TOKEN }}" \
-                             https://slack.com/api/files.upload)
-            echo "Slack API Response: $RESPONSE"
-            if echo "$RESPONSE" | grep -q '"ok":true'; then
-              echo "✅ APK uploaded to Slack!"
+
+            # 1. Get upload URL
+            RESPONSE=$(curl -X POST \
+              -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" \
+              -F "filename=$(basename "$APK_FILE")" \
+              -F "filetype=apk" \
+              -F "channels=#auto_build" \
+              https://slack.com/api/files.getUploadURLExternal)
+            UPLOAD_URL=$(echo "$RESPONSE" | jq -r '.url')
+
+            if [ "$UPLOAD_URL" != "null" ]; then
+              echo "✅ Got upload URL: $UPLOAD_URL"
             else
-              echo "❌ Failed to upload APK to Slack."
+              echo "❌ Failed to get upload URL"
+              exit 1
+            fi
+
+            # 2. Upload the file in chunks
+            CHUNK_SIZE=5M
+            FILE_SIZE=$(stat -c %s "$APK_FILE")
+            CHUNKS=$((FILE_SIZE / (CHUNK_SIZE)) + 1))
+            echo "📦 Uploading file in $CHUNKS chunks..."
+
+            for ((i=0; i<$CHUNKS; i++)); do
+              START=$((i * CHUNK_SIZE))
+              END=$(((i + 1) * CHUNK_SIZE))
+              if [ $END -gt $FILE_SIZE ]; then
+                END=$FILE_SIZE
+              fi
+              echo "Uploading chunk $((i + 1)) from byte $START to byte $END"
+              curl -X POST \
+                -F "file=@$APK_FILE;offset=$START;length=$((END - START))" \
+                -F "upload_url=$UPLOAD_URL" \
+                https://slack.com/api/files.uploadChunk
+            done
+
+            # 3. Complete the upload
+            COMPLETION_RESPONSE=$(curl -X POST \
+              -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" \
+              -F "upload_url=$UPLOAD_URL" \
+              https://slack.com/api/files.completeUploadExternal)
+          
+            if echo "$COMPLETION_RESPONSE" | jq -r '.ok' == "true"; then
+              echo "✅ APK uploaded to Slack successfully!"
+            else
+              echo "❌ Failed to complete APK upload to Slack."
               exit 1
             fi
           else
