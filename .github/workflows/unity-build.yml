@@ -91,18 +91,39 @@ jobs:
       - name: Send Slack Notification with APK
         run: |
           echo "📤 Uploading APK to Slack..."
-          FILE_PATH=$(ls build/Android/*.apk | head -n 1)
+          
+          FILE_PATH=$(find build/Android/ -type f -name "*.apk" | head -n 1)
+
           if [ -z "$FILE_PATH" ]; then
             echo "❌ APK dosyası bulunamadı!"
             exit 1
           fi
-          curl -F file=@"$FILE_PATH" \
-               -F "initial_comment=🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱" \
-               -F channels="#auto_build" \
-               -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-               https://slack.com/api/files.uploadv2 | tee response.json
+
+          # Slack'ten upload URL ve file ID al
+          UPLOAD_RESPONSE=$(curl -s -X POST "https://slack.com/api/files.getUploadURLExternal" \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"filename": "'"$(basename $FILE_PATH)"'"}')
+
+          UPLOAD_URL=$(echo $UPLOAD_RESPONSE | jq -r '.upload_url')
+          FILE_ID=$(echo $UPLOAD_RESPONSE | jq -r '.file_id')
+
+          if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" == "null" ]; then
+            echo "❌ Slack yükleme URL'si alınamadı! Hata: $UPLOAD_RESPONSE"
+            exit 1
+          fi
+
+          echo "🔄 Dosya yükleniyor..."
+          curl -X POST -F file=@"$FILE_PATH" "$UPLOAD_URL"
+
+          echo "✅ Yükleme tamamlandı, Slack'e bildiriliyor..."
+          curl -X POST "https://slack.com/api/files.completeUploadExternal" \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{
+              "file_id": "'"$FILE_ID"'",
+              "channel_id": "#auto_build",
+              "initial_comment": "🚀 *Unity Build Tamamlandı!* ✅ İşte APK dosyan! 📱"
+            }'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-
-  
-  
